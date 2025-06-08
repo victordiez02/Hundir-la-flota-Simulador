@@ -14,23 +14,34 @@ from constantes import NUM_SIMULACIONES
 def main():
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
+    size = comm.Get_size()
+
+    if size < 3:
+        if rank == 0:
+            print("Este programa requiere al menos 3 procesos MPI (2 jugadores + 1 coordinador).")
+        return
 
     estrategias = list(ESTRATEGIAS_DISPONIBLES.keys())
-    resultados = []
 
-    for e0 in estrategias:
-        for e1 in estrategias:
-            if rank == 0:
+    if rank == 2:
+        resultados = []
+        # Proceso maestro: gestiona todas las combinaciones de estrategias y controla los turnos
+        for e0 in estrategias:
+            for e1 in estrategias:
                 print(f"\nSimulando {NUM_SIMULACIONES} partidas entre {e0.upper()} vs {e1.upper()}...\n")
+                for _ in range(NUM_SIMULACIONES):
+                    # En cada partida, se envían las estrategias a rank 0 y 1
+                    comm.send((e0, e1), dest=0, tag=0)
+                    comm.send((e0, e1), dest=1, tag=0)
 
-            for _ in range(NUM_SIMULACIONES):
-                resultado = jugar_una_partida(e0, e1)
-                if rank == 0 and resultado:
+                    # Recogemos los resultados desde el rank 0
+                    resultado = comm.recv(source=0, tag=1)
                     resultados.append(resultado)
+        # Después de todas las partidas, se manda una señal de parada
+        comm.send(None, dest=0, tag=9)
+        comm.send(None, dest=1, tag=9)
 
-    # STATS FINALES DE LAS PARTIDAS (las imprime el rank 0)
-    # Solo rank 0 imprime resumen final
-    if rank == 0:
+        # STATS FINALES DE LAS PARTIDAS (las imprime el rank 2)
         resumen = {}
         for r in resultados:
             clave = (r["estrategia_j0"], r["estrategia_j1"])
@@ -100,7 +111,19 @@ def main():
             fila = [e0] + [f"{matriz[i][j]:.1f}%" for j in range(len(estrategias_set))]
             table.add_row(*fila)
 
-        console.print(table)
+        if NUM_SIMULACIONES >1: console.print(table)
+        
+    else:
+        # Jugadores: ejecutan partidas cuando reciben estrategias del coordinador
+        while True:
+            status = MPI.Status()
+            datos = comm.recv(source=2, tag=MPI.ANY_TAG, status=status)
+            if status.Get_tag() == 9:
+                break
+            e0, e1 = datos
+            resultado = jugar_una_partida(e0, e1)
+            if rank == 0:
+                comm.send(resultado, dest=2, tag=1)
 
 
 if __name__ == "__main__":

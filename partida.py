@@ -13,10 +13,9 @@ Funciones:
 
 from mpi4py import MPI
 from jugador import Jugador
-from constantes import BOARD_SIZE, ESTRATEGIAS_DISPONIBLES, MOSTRAR_TABLERO
+from constantes import BOARD_SIZE, ESTRATEGIAS_DISPONIBLES, MOSTRAR_TABLERO, MOSTRAR_DISPAROS
 
 import time
-from copy import deepcopy
 
 
 # Lista de eventos que se imprimirán al final
@@ -33,26 +32,30 @@ def guardar_tablero_evento(eventos_tablero, jugador_id, atacante_id, turno, coor
         tablero: estado del tablero del jugador receptor.
         resultado: resultado del disparo ("agua", "tocado", "hundido", "FIN").
     """
-    eventos_tablero.append({
+    evento = {
         "turno": turno,
         "atacante": atacante_id,
         "receptor": jugador_id,
         "coordenadas": coordenadas,
-        "tablero": [row[:] for row in tablero],  # Copia del tablero
         "resultado": resultado
-    })
+    }
+
+    if MOSTRAR_TABLERO:
+        evento["tablero"] = [row[:] for row in tablero]  # Copia profunda de las filas
+
+    eventos_tablero.append(evento)
 
 def imprimir_eventos_guardados(eventos_tablero, mostrar_tablero=False):
     """
     Imprime todos los eventos de tablero guardados tras la partida, en orden cronológico,
     con información del disparo, modo, proceso y si se ha hundido un barco.
     """
-    for evento in sorted(eventos_tablero, key=lambda x: x['atacante']):
+    for evento in sorted(eventos_tablero, key=lambda x: x['turno']):
         turno = evento['turno']
         atacante = evento['atacante']
         receptor = evento['receptor']
         coordenadas = evento['coordenadas']
-        tablero = evento['tablero']
+        if mostrar_tablero: tablero = evento['tablero']
         resultado = evento['resultado']
 
         print("\n" + "=" * 60)
@@ -102,7 +105,7 @@ def jugar_una_partida(nombre_estrategia_0, nombre_estrategia_1):
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     size = comm.Get_size()
-    assert size == 2, "Este juego requiere exactamente 2 procesos MPI."
+    assert size == 3, "Este juego requiere exactamente 3 procesos MPI."
 
     # === Instanciar jugador y estrategia ===
     estrategia_nombre = nombre_estrategia_0 if rank == 0 else nombre_estrategia_1
@@ -111,7 +114,13 @@ def jugar_una_partida(nombre_estrategia_0, nombre_estrategia_1):
     jugador = Jugador(estrategia, board_size=BOARD_SIZE)
 
     # === Estadísticas locales ===
-    turno = 0
+    # Solo el jugador rank 0 lleva el turno, para no desincronizar
+    if rank == 0:
+        turno = 0
+        comm.send(turno, dest=1, tag=99)
+    else:
+        turno = comm.recv(source=0, tag=99)
+
     juego_terminado = False
     disparos_realizados = 0
     aciertos = 0
@@ -161,32 +170,43 @@ def jugar_una_partida(nombre_estrategia_0, nombre_estrategia_1):
                     caza = True
                 elif resultado == 'hundido':
                     caza = False
-            debe_guardar = (
-                turno < 2 or                            # Guardamos siempre los dos primeros turnos
-                resultado in {'tocado', 'hundido'} or   # Guardamos si ha tocado o hundido y uno más
-                resultado_anterior == 'hundido' or
-                caza or
-                juego_terminado                         # Guardamos si el juego ha terminado
-            )
-            resultado_anterior = resultado
+            match MOSTRAR_DISPAROS:
+                case "Solo aciertos":
+                    debe_guardar = (
+                        turno < 2 or
+                        resultado in {'tocado', 'hundido'} or
+                        resultado_anterior == 'hundido' or
+                        caza or
+                        juego_terminado
+                    )
+                    resultado_anterior = resultado
+                case "Todos":
+                    debe_guardar = True
+                case "Ninguno":
+                    debe_guardar = True
 
             # Registramos si corresponde
-            if MOSTRAR_TABLERO and debe_guardar:
+            if debe_guardar:
                 guardar_tablero_evento(
                         eventos_tablero = eventos_tablero,
                         jugador_id=1 - turno % 2,
                         atacante_id=turno % 2,
                         turno=turno,
                         coordenadas=(x, y),
-                        tablero=jugador.tablero, # tablero del jugador que recibe el disparo
+                        tablero=jugador.tablero if MOSTRAR_TABLERO else None, # tablero del jugador que recibe el disparo
                         resultado=resultado
                     )
 
             if resultado == "FIN":
                 juego_terminado = True
 
-        # Actualizamos el turno
-        turno += 1
+        # Actualizamos el turno: rank 0 incrementa el turno y lo envía a rank 1,
+        # este lo recibe y lo actualiza
+        if rank == 0:
+            turno += 1
+            comm.send(turno, dest=1, tag=99)
+        else:
+            turno = comm.recv(source=0, tag=99)
 
     # === Enviar / Recoger estadísticas ===
     fin = time.time()
@@ -206,8 +226,11 @@ def jugar_una_partida(nombre_estrategia_0, nombre_estrategia_1):
         # a los eventos del tablero local 
         todos_los_eventos = eventos_tablero + eventos_tablero_remoto
 
-        if MOSTRAR_TABLERO:
-            imprimir_eventos_guardados(todos_los_eventos, True)
+        if MOSTRAR_DISPAROS != "Ninguno":
+            if MOSTRAR_TABLERO:
+                imprimir_eventos_guardados(todos_los_eventos, True)
+            else:
+                imprimir_eventos_guardados(todos_los_eventos, False)
 
         return {
             "ganador": ganador,
