@@ -5,12 +5,13 @@ Estrategia de disparo optimizada para el juego "Hundir la Flota".
 
 Esta estrategia es una mejora sobre la estrategia optimizada, donde además de
 la exploración y caza, se implementa un patrón de disparo más eficiente:
+
 - En el modo "exploración", ahora se dispara aleatoriamente en posiciones con
-     patrón de damero (checkerboard), lo cual mejora la cobertura y probabilidad
-     de encontrar barcos, ya que ningún barco puede ocupar una sola celda.
+  patrón de ajedrez, lo cual mejora la probabilidad de encontrar barcos,
+  ya que ningún barco puede ocupar una sola celda.
 
 - Ahora se almacenan los barcos hundidos para evitar disparos en celdas adyacentes,
-     pues no puede haber dos barcos con distancia de Chevyshev nula.
+  pues no puede haber dos barcos con distancia de Chevyshev nula.
 
 Ventajas de esta estrategia:
 - Aumenta notablemente la eficiencia en la localización de barcos.
@@ -38,7 +39,7 @@ class EstrategiaOptimizada2(Estrategia):
                     self.disparos_realizados.add((x, y))
                     return x, y
 
-        # Exploración aleatoria tipo damero
+        # Exploración aleatoria tipo ajedrez
         while True:
             x = random.randint(0, self.board_size - 1)
             y = random.randint(0, self.board_size - 1)
@@ -64,7 +65,7 @@ class EstrategiaOptimizada2(Estrategia):
         Devuelve True si (x, y) es una coordenada válida para disparar:
         - Dentro del tablero
         - No ha sido disparada antes
-        - No está adyacente (incluyendo diagonales) a ningún barco hundido
+        - No es adyacente (incluyendo diagonales) a ningún barco hundido
         """
         valido = (
             0 <= x < self.board_size and
@@ -96,7 +97,7 @@ class EstrategiaOptimizada2(Estrategia):
             x, y = self.tocados[0]
             vecinos = [(x-1, y), (x+1, y), (x, y-1), (x, y+1)]
         else:
-            # Detectar orientación del barco (horizontal o vertical)
+            # Detecta la orientación del barco (horizontal o vertical)
             self.tocados.sort()
             dx = self.tocados[1][0] - self.tocados[0][0]
             dy = self.tocados[1][1] - self.tocados[0][1]
@@ -111,7 +112,7 @@ class EstrategiaOptimizada2(Estrategia):
                 (ultimo[0] + dx, ultimo[1] + dy)
             ]
 
-        # Añadir solo los que sean válidos y aún no disparados
+        # Añade solo los que sean válidos y aún no disparados
         self.candidatos = [
             (x, y) for (x, y) in vecinos if self.es_disparo_valido(x, y)
         ]

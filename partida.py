@@ -9,6 +9,8 @@ y MPI_Recv, alternando turnos hasta que un jugador pierde toda su flota.
 
 Funciones:
 - jugar_una_partida(): ejecuta una única partida y devuelve estadísticas de la misma.
+- guardar_tablero_evento(): guarda eventos relevantes del juego para imprimir al final.
+- imprimir_eventos_guardados(): imprime los eventos guardados al final de la partida.
 """
 
 from mpi4py import MPI
@@ -90,7 +92,7 @@ def jugar_una_partida(nombre_estrategia_0, nombre_estrategia_1):
         nombre_estrategia_0 (str): nombre de la estrategia para el jugador 0.
         nombre_estrategia_1 (str): nombre de la estrategia para el jugador 1.
 
-    Retorna (solo en rank 0):
+    Returns (solo en rank 0):
         dict con:
             - 'ganador': 0 o 1
             - 'turnos': número total de turnos jugados
@@ -107,7 +109,7 @@ def jugar_una_partida(nombre_estrategia_0, nombre_estrategia_1):
     size = comm.Get_size()
     assert size == 3, "Este juego requiere exactamente 3 procesos MPI."
 
-    # === Instanciar jugador y estrategia ===
+    # Instanciamos el jugador y estrategia
     estrategia_nombre = nombre_estrategia_0 if rank == 0 else nombre_estrategia_1
     estrategia_clase = ESTRATEGIAS_DISPONIBLES[estrategia_nombre]
     estrategia = estrategia_clase(board_size=BOARD_SIZE)
@@ -128,7 +130,7 @@ def jugar_una_partida(nombre_estrategia_0, nombre_estrategia_1):
     # Inicialización para visualización
     caza = False  # Variable para indicar si se está cazando
     resultado_anterior = None
-    ganador = None  # inicialización segura
+    ganador = None  # Inicialización segura
 
     # === Bucle principal del juego ===
     while not juego_terminado:
@@ -208,7 +210,7 @@ def jugar_una_partida(nombre_estrategia_0, nombre_estrategia_1):
         else:
             turno = comm.recv(source=0, tag=99)
 
-    # === Enviar / Recoger estadísticas ===
+    # === Enviamos recogemos las estadísticas ===
     fin = time.time()
 
     stats_locales = {
@@ -216,7 +218,7 @@ def jugar_una_partida(nombre_estrategia_0, nombre_estrategia_1):
         "aciertos": aciertos
     }
 
-    # Enviamos las estadísticas y eventos de tabñer del jugador rank 1 al
+    # Enviamos las estadísticas y eventos del jugador rank 1 al
     # jugador rank 0 para que las procese y las imprima
     if rank == 0:
         stats_remotas = comm.recv(source=1, tag=2)

@@ -3,7 +3,7 @@ optimizada.py
 
 Estrategia de disparo optimizada para el juego "Hundir la Flota".
 
-Esta estrategia simula un comportamiento inteligente con dos fases diferenciadas:
+Esta estrategia simula un comportamiento inteligente con dos fases:
 
 1. Modo "exploración":
    - Se dispara aleatoriamente sin repetir.

@@ -17,22 +17,28 @@ from estrategias.optimizada2 import EstrategiaOptimizada2
 # Tamaño del tablero (cuadrado)
 BOARD_SIZE = 20
 
+### Está por defecto para mostrar una sola partida con estrategia optimizada2.
+
 # Número de simulaciones a realizar en una partida por estrategia
 NUM_SIMULACIONES = 1
 
 # Estrategias disponibles
+# Se pueden añadir más estrategias comentando/descomentando las líneas correspondientes.
 ESTRATEGIAS_DISPONIBLES = {
+    #"aleatoria": EstrategiaAleatoria,
+    #"optimizada": EstrategiaOptimizada,
     "optimizada2": EstrategiaOptimizada2,
 }
 
-# Activa o desactiva impresión en tiempo real
+# Activa o desactiva la impresión en tiempo real
 MOSTRAR_DISPAROS = "Solo aciertos"  
 # Opciones: "Todos", "Solo aciertos", "Ninguno"
 
 MOSTRAR_TABLERO = True
 # (True para ver el tablero en cada turno, False para no mostrarlo)
-# Está desactivado por defecto para evitar saturar la salida en MPI.
-# Solo está para debugging o pruebas locales.  
+# Está activado por defecto pero conviene desactivarlo cuando hay mas estrategias
+# o simulaciones para evitar saturar la salida en MPI.
+# Solo está para debugging o pruebas locales.
 
 # Tamaños de los barcos en la flota
 # (5 barcos: 1 de tamaño 5, 1 de tamaño 4, 2 de tamaño 3, 1 de tamaño 2)

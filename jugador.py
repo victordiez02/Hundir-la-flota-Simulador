@@ -26,7 +26,7 @@ class Jugador:
 
         Parámetros:
             estrategia: instancia de una clase que hereda de Estrategia.
-            board_size: tamaño del tablero (e.g., 20).
+            board_size: tamaño del tablero.
         """
         self.board_size = board_size
         self.estrategia = estrategia
@@ -37,7 +37,7 @@ class Jugador:
         """
         Obtiene la siguiente coordenada a disparar, delegando en la estrategia.
 
-        Retorna:
+        Returns:
             (x, y): coordenadas del disparo.
         """
         return self.estrategia.siguiente_disparo()
@@ -61,7 +61,7 @@ class Jugador:
         Parámetros:
             x, y: coordenadas del disparo recibido.
 
-        Retorna:
+        Returns:
             resultado: 'agua', 'tocado', 'hundido' o 'FIN' si el jugador ha perdido.
         """
         for barco in self.flota:

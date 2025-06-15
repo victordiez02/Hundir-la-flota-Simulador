@@ -113,7 +113,7 @@ Se usa comunicación punto a punto con `send` y `recv` entre los dos procesos:
 
 Las estrategias son el corazón del comportamiento de cada jugador. Cada estrategia implementa una forma distinta de decidir la próxima coordenada donde disparar.
 
-Todas las estrategias heredan de la clase base `EstrategiaBase`, ubicada en `estrategias/base.py`, y deben implementar el método:
+Todas las estrategias heredan de la clase base `Estrategia`, ubicada en `estrategias/base.py`, y deben implementar el método:
 
 ```python
 def siguiente_disparo(self) -> tuple[int, int]

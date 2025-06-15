@@ -14,7 +14,7 @@ class Estrategia(ABC):
     @abstractmethod
     def siguiente_disparo(self):
         """
-        Retorna una tupla (x, y) con la próxima coordenada a disparar.
+        Devuelve una tupla (x, y) con la próxima coordenada a disparar.
         """
         pass
 

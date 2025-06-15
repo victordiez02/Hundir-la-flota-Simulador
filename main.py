@@ -99,7 +99,7 @@ def main():
             print(f"  - Disparos por partida: J0={prom_disparos_j0:.1f}, J1={prom_disparos_j1:.1f}")
             print()
 
-        # === IMPRIMIR TABLA DE PORCENTAJES DE VICTORIA DE J1 ===
+        # === IMPRESIÓN DE TABLA DE PORCENTAJES DE VICTORIA DE J1 ===
         console = Console()
         table = Table(title="Porcentaje de victorias del Jugador 1", show_lines=True)
         table.add_column("J0 \\ J1", justify="right")
